@@ -60,13 +60,23 @@ export default function Home() {
 
   const saveData = () => {
     if (!today) return;
-    const newEntry = { date: today, ...habitValues };
+  
+    // Ensure newEntry has the required properties of HabitData
+    const newEntry: HabitData = {
+      date: today,
+      sleep: habitValues.sleep,
+      water: habitValues.water,
+      screen: habitValues.screen,
+    };
+  
     let updatedLog = [...log.filter((entry) => entry.date !== today), newEntry];
     updatedLog = updatedLog.sort((a, b) => a.date.localeCompare(b.date));
+  
     setLog(updatedLog);
     localStorage.setItem("habit-log", JSON.stringify(updatedLog));
     alert("✅ Habits saved!");
   };
+  
 
   const weeklyData = log.slice(-7);
 
