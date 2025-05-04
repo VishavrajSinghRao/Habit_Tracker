@@ -1,102 +1,151 @@
-import Image from "next/image";
+
+"use client";
+import { useState, useEffect } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { motion } from "framer-motion";
+
+const habits = [
+  { name: "Sleep (hrs)", key: "sleep", max: 12 },
+  { name: "Water (cups)", key: "water", max: 12 },
+  { name: "Screen Time (hrs)", key: "screen", max: 12 },
+];
+
+type HabitData = {
+  date: string;
+  sleep: number;
+  water: number;
+  screen: number;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [today, setToday] = useState(new Date().toISOString().slice(0, 10));
+  const [habitValues, setHabitValues] = useState<Record<string, number>>({
+    sleep: 0,
+    water: 0,
+    screen: 0,
+  });
+  const [log, setLog] = useState<HabitData[]>([]);
+  const [streak, setStreak] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const savedLog = localStorage.getItem("habit-log");
+    if (savedLog) {
+      const parsed = JSON.parse(savedLog);
+      setLog(parsed);
+      if (parsed[parsed.length - 1]?.date === today) {
+        setHabitValues({
+          sleep: parsed[parsed.length - 1].sleep,
+          water: parsed[parsed.length - 1].water,
+          screen: parsed[parsed.length - 1].screen,
+        });
+      }
+      let streakCount = 0;
+      for (let i = parsed.length - 1; i >= 0; i--) {
+        const date = new Date(parsed[i].date);
+        const expected = new Date();
+        expected.setDate(expected.getDate() - (parsed.length - 1 - i));
+        if (date.toDateString() === expected.toDateString()) {
+          streakCount++;
+        } else break;
+      }
+      setStreak(streakCount);
+    }
+  }, []);
+
+  const saveData = () => {
+    const newEntry = { date: today, ...habitValues };
+    let updatedLog = [...log.filter((entry) => entry.date !== today), newEntry];
+    updatedLog = updatedLog.sort((a, b) => a.date.localeCompare(b.date));
+    setLog(updatedLog);
+    localStorage.setItem("habit-log", JSON.stringify(updatedLog));
+    alert("✅ Habits saved!");
+  };
+
+  const weeklyData = log.slice(-7);
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      {/* NAV */}
+      <nav className="bg-white shadow px-6 py-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-blue-600">HabitWise</h1>
+        <div className="space-x-4 text-sm">
+          <button className="hover:underline">Dashboard</button>
+          <button className="hover:underline">Reminders</button>
+          <button className="hover:underline">Profile</button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </nav>
+
+      {/* HEADER */}
+      <header className="px-6 py-10 text-center">
+        <motion.h2
+          initial={{ y: -30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="text-3xl font-semibold"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+          Track Your Habits. Improve Every Day.
+        </motion.h2>
+        <p className="text-gray-600 mt-2">Stay consistent with your personal goals</p>
+      </header>
+
+      {/* DAILY CHECK-IN */}
+      <section className="px-6 max-w-4xl mx-auto space-y-6">
+        <div className="bg-white shadow rounded-xl p-6 space-y-4">
+          <h3 className="text-xl font-semibold">Daily Check-in — {today}</h3>
+          {habits.map((habit) => (
+            <div key={habit.key} className="flex items-center justify-between">
+              <label htmlFor={habit.key} className="w-1/3">
+                {habit.name}
+              </label>
+              <input
+                type="range"
+                id={habit.key}
+                min={0}
+                max={habit.max}
+                value={habitValues[habit.key]}
+                onChange={(e) =>
+                  setHabitValues({ ...habitValues, [habit.key]: Number(e.target.value) })
+                }
+                className="w-2/3"
+              />
+              <span className="ml-4 w-10 text-right">{habitValues[habit.key]}</span>
+            </div>
+          ))}
+          <button
+            onClick={saveData}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Save Progress
+          </button>
+        </div>
+
+        {/* PROGRESS CHARTS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {habits.map((habit) => (
+            <div key={habit.key} className="bg-white shadow rounded-xl p-4">
+              <h4 className="text-md font-medium text-center">{habit.name} (Last 7 Days)</h4>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={weeklyData}>
+                  <XAxis dataKey="date" hide />
+                  <YAxis domain={[0, habit.max]} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey={habit.key} stroke="#3b82f6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ))}
+        </div>
+
+        {/* STREAK */}
+        <div className="text-center mt-8">
+          <p className="text-xl font-semibold">
+            🔥 Current Streak: <span className="text-blue-600">{streak} days</span>
+          </p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="mt-16 text-center text-sm text-gray-500 pb-6">
+        Built with ❤️ using Next.js, Tailwind, TypeScript, Recharts & Framer Motion
       </footer>
     </div>
   );
