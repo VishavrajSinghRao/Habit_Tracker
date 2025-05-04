@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -18,7 +17,7 @@ type HabitData = {
 };
 
 export default function Home() {
-  const [today, setToday] = useState(new Date().toISOString().slice(0, 10));
+  const [today, setToday] = useState("");
   const [habitValues, setHabitValues] = useState<Record<string, number>>({
     sleep: 0,
     water: 0,
@@ -28,15 +27,22 @@ export default function Home() {
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
+    setToday(new Date().toISOString().slice(0, 10));
+  }, [today]);
+
+  useEffect(() => {
+    if (!today) return;
+
     const savedLog = localStorage.getItem("habit-log");
     if (savedLog) {
-      const parsed = JSON.parse(savedLog);
+      const parsed: HabitData[] = JSON.parse(savedLog);
       setLog(parsed);
-      if (parsed[parsed.length - 1]?.date === today) {
+      const lastEntry = parsed[parsed.length - 1];
+      if (lastEntry?.date === today) {
         setHabitValues({
-          sleep: parsed[parsed.length - 1].sleep,
-          water: parsed[parsed.length - 1].water,
-          screen: parsed[parsed.length - 1].screen,
+          sleep: lastEntry.sleep,
+          water: lastEntry.water,
+          screen: lastEntry.screen,
         });
       }
       let streakCount = 0;
@@ -50,9 +56,10 @@ export default function Home() {
       }
       setStreak(streakCount);
     }
-  }, []);
+  }, [today]);
 
   const saveData = () => {
+    if (!today) return;
     const newEntry = { date: today, ...habitValues };
     let updatedLog = [...log.filter((entry) => entry.date !== today), newEntry];
     updatedLog = updatedLog.sort((a, b) => a.date.localeCompare(b.date));
@@ -69,9 +76,7 @@ export default function Home() {
       <nav className="bg-white shadow px-6 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-blue-600">HabitWise</h1>
         <div className="space-x-4 text-sm">
-          <button className="hover:underline">Dashboard</button>
-          <button className="hover:underline">Reminders</button>
-          <button className="hover:underline">Profile</button>
+       
         </div>
       </nav>
 
@@ -90,7 +95,7 @@ export default function Home() {
       {/* DAILY CHECK-IN */}
       <section className="px-6 max-w-4xl mx-auto space-y-6">
         <div className="bg-white shadow rounded-xl p-6 space-y-4">
-          <h3 className="text-xl font-semibold">Daily Check-in — {today}</h3>
+          <h3 className="text-xl font-semibold">Daily Check-in — {today || "Loading..."}</h3>
           {habits.map((habit) => (
             <div key={habit.key} className="flex items-center justify-between">
               <label htmlFor={habit.key} className="w-1/3">
@@ -143,10 +148,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="mt-16 text-center text-sm text-gray-500 pb-6">
-        Built with ❤️ using Next.js, Tailwind, TypeScript, Recharts & Framer Motion
-      </footer>
+ 
     </div>
   );
 }
